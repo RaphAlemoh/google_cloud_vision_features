@@ -11,6 +11,19 @@ Route::get('/', function () {
 
 Route::middleware(['auth'])->group(function () {
     Route::get('/home', [UploadController::class, 'upload'])->name('home');
-    Route::post('uploads/store', [UploadController::class, 'store'])->name('uploads.store');
-});
 
+    //we are using the same form to upload files and explore the features of Google cloud vision
+
+    //route for safe search detection
+    // Route::post('uploads/store', [UploadController::class, 'SafeSearchDetection'])->name('uploads.store');
+
+    //route for detectText in image
+    // Route::post('uploads/store', [UploadController::class, 'detectTextInImage'])->name('uploads.store');
+
+    //route for detectText in image using
+    // Route::post('uploads/store', [UploadController::class, 'documentTextDetection'])->name('uploads.store');
+
+    //detect text in PDF file in GCS
+    Route::get('uploads/pdf', [UploadController::class, 'detectPDFinGCS'])->name('uploads.pdf');
+
+});
