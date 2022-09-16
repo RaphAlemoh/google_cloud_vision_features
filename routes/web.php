@@ -24,6 +24,9 @@ Route::middleware(['auth'])->group(function () {
     // Route::post('uploads/store', [UploadController::class, 'documentTextDetection'])->name('uploads.store');
 
     //detect text in PDF file in GCS
-    Route::get('uploads/pdf', [UploadController::class, 'detectPDFinGCS'])->name('uploads.pdf');
+    // Route::get('uploads/pdf', [UploadController::class, 'detectPDFinGCS'])->name('uploads.pdf');
+
+    //detect faces on image upload
+    Route::post('uploads/store', [UploadController::class, 'detectFaces'])->name('uploads.store');
 
 });

@@ -318,4 +318,130 @@ class UploadController extends Controller
 
         $imageAnnotator->close();
     }
+
+
+    public function detectFaces(Request $request)
+    {
+        $request->validate([
+            'avatar' => 'required|image|max:10240',
+        ]);
+
+        try {
+            $imageAnnotator = new ImageAnnotatorClient([
+                //we can also keep the details of the google cloud json file in an env and read it as an object here
+                'credentials' => config_path('laravel-cloud-features.json')
+            ]);
+            # annotate the image
+
+            $path = $request->file("avatar");
+            $image = file_get_contents($path);
+
+            $outFile = null;
+
+            $response = $imageAnnotator->faceDetection($image);
+            $faces = $response->getFaceAnnotations();
+
+            # names of likelihood from google.cloud.vision.enums
+            $likelihoodName = [
+                'UNKNOWN', 'VERY_UNLIKELY', 'UNLIKELY',
+                'POSSIBLE', 'LIKELY', 'VERY_LIKELY'
+            ];
+
+            $number_of_faces = count($faces);
+
+            // the number of faces found on the image
+            // printf('%d faces found:' . PHP_EOL, count($faces));
+
+            $image_face_content = '';
+
+            $count = 0;
+
+            foreach ($faces as $face) {
+                $count = +1;
+                $anger = $face->getAngerLikelihood();
+                //the likelihood of anger
+                // printf('Anger: %s' . PHP_EOL, $likelihoodName[$anger]);
+                $image_face_content .= "Face $count is Angry?: $likelihoodName[$anger] \n";
+
+                $joy = $face->getJoyLikelihood();
+                //the likelihood of joy
+                // printf('Joy: %s' . PHP_EOL, $likelihoodName[$joy]);
+                $image_face_content .= "Face $count is Joyful?: $likelihoodName[$joy] \n";
+
+                $surprise = $face->getSurpriseLikelihood();
+                //suprise status
+                // printf('Surprise: %s' . PHP_EOL, $likelihoodName[$surprise]);
+                $image_face_content .= "Face $count is Suprised?: $likelihoodName[$surprise] \n";
+
+                # get bounds
+                $vertices = $face->getBoundingPoly()->getVertices();
+                $bounds = [];
+                foreach ($vertices as $vertex) {
+                    $bounds[] = sprintf('(%d,%d)', $vertex->getX(), $vertex->getY());
+                }
+
+                //returns the bounds in for the faces result
+                print('Bounds: ' . join(', ', $bounds) . PHP_EOL);
+                print(PHP_EOL);
+            }
+            // [END vision_face_detection]
+
+            # [START vision_face_detection_tutorial_process_response]
+            # draw box around faces
+            if ($faces && $outFile) {
+                $imageCreateFunc = [
+                    'png' => 'imagecreatefrompng',
+                    'gd' => 'imagecreatefromgd',
+                    'gif' => 'imagecreatefromgif',
+                    'jpg' => 'imagecreatefromjpeg',
+                    'jpeg' => 'imagecreatefromjpeg',
+                ];
+                $imageWriteFunc = [
+                    'png' => 'imagepng',
+                    'gd' => 'imagegd',
+                    'gif' => 'imagegif',
+                    'jpg' => 'imagejpeg',
+                    'jpeg' => 'imagejpeg',
+                ];
+
+                copy($path, $outFile);
+                $ext = strtolower(pathinfo($path, PATHINFO_EXTENSION));
+                if (!array_key_exists($ext, $imageCreateFunc)) {
+                    throw new \Exception('Unsupported image extension');
+                }
+
+                $outputImage = call_user_func($imageCreateFunc[$ext], $outFile);
+
+                foreach ($faces as $face) {
+                    $vertices = $face->getBoundingPoly()->getVertices();
+                    if ($vertices) {
+                        $x1 = $vertices[0]->getX();
+                        $y1 = $vertices[0]->getY();
+                        $x2 = $vertices[2]->getX();
+                        $y2 = $vertices[2]->getY();
+                        imagerectangle($outputImage, $x1, $y1, $x2, $y2, 0x00ff00);
+                    }
+                }
+
+
+                call_user_func($imageWriteFunc[$ext], $outputImage, $outFile);
+
+                printf('Output image written to %s' . PHP_EOL, $outFile);
+
+                //to display the image with boxes on surrounding the faces
+                // header('Content-Type: image/jpeg');
+                // imagejpeg($outputImage);
+                // imagedestroy($outputImage);
+            }
+
+            $formatted_text = new HtmlString($image_face_content);
+
+            return redirect()->route('home')
+                ->with('success', "Number of faces on the image: $number_of_faces. Details of face detection on uploaded image $formatted_text");
+        } catch (Exception $e) {
+            return $e->getMessage();
+        }
+
+        $imageAnnotator->close();
+    }
 }
