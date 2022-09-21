@@ -537,4 +537,43 @@ class UploadController extends Controller
         }
         $imageAnnotator->close();
     }
+
+    public function detectLandmarks(Request $request)
+    {
+
+        $request->validate([
+            'avatar' => 'required|image|max:10240',
+        ]);
+
+        try {
+
+            $imageAnnotator = new ImageAnnotatorClient([
+                //we can also keep the details of the google cloud json file in an env and read it as an object here
+                'credentials' => config_path('laravel-cloud-features.json')
+            ]);
+
+            # annotate the image
+            $image = file_get_contents($request->file("avatar"));
+            $response = $imageAnnotator->landmarkDetection($image);
+            $landmarks = $response->getLandmarkAnnotations();
+
+            $number_landmarks = count($landmarks);
+            $landmark_content = '';
+
+            printf('%d landmark found:' . PHP_EOL, count($landmarks));
+            foreach ($landmarks as $landmark) {
+                $landmark_content .= "{$landmark->getDescription()}";
+                print($landmark->getDescription() . PHP_EOL);
+            }
+
+
+            $formatted_landmark = new HtmlString($landmark_content);
+
+            return redirect()->route('home')
+                ->with('success', "Landmark detection successful!!! Number of Landmarks:  $number_landmarks Formatted Landmark found on image uploaded: $formatted_landmark");
+        } catch (Exception $e) {
+            return $e->getMessage();
+        }
+        $imageAnnotator->close();
+    }
 }
