@@ -30,5 +30,9 @@ Route::middleware(['auth'])->group(function () {
     // Route::post('uploads/store', [UploadController::class, 'detectFaces'])->name('uploads.store');
 
     //detect multiple objects on image upload
-    Route::post('uploads/store', [UploadController::class, 'detectObject'])->name('uploads.store');
+    // Route::post('uploads/store', [UploadController::class, 'detectObject'])->name('uploads.store');
+
+
+    //detect Logo on image upload
+    Route::post('uploads/store', [UploadController::class, 'detectLogo'])->name('uploads.store');
 });

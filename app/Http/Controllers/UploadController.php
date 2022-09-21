@@ -498,4 +498,43 @@ class UploadController extends Controller
         }
         $imageAnnotator->close();
     }
+
+
+    public function detectLogo(Request $request)
+    {
+
+        $request->validate([
+            'avatar' => 'required|image|max:10240',
+        ]);
+
+        try {
+
+            $imageAnnotator = new ImageAnnotatorClient([
+                //we can also keep the details of the google cloud json file in an env and read it as an object here
+                'credentials' => config_path('laravel-cloud-features.json')
+            ]);
+
+            # annotate the image
+            $image = file_get_contents($request->file("avatar"));
+            $response = $imageAnnotator->logoDetection($image);
+            $logos = $response->getLogoAnnotations();
+
+            $number_logos = count($logos);
+            $logo_content = '';
+
+            printf('%d logos found:' . PHP_EOL, count($logos));
+            foreach ($logos as $logo) {
+                $logo_content .= "{$logo->getDescription()}";
+                print($logo->getDescription() . PHP_EOL);
+            }
+
+            $formatted_logo = new HtmlString($logo_content);
+
+            return redirect()->route('home')
+                ->with('success', "Logo detection successful!!! Number of Logos:  $number_logos Formatted Logos found on image uploaded: $formatted_logo");
+        } catch (Exception $e) {
+            return $e->getMessage();
+        }
+        $imageAnnotator->close();
+    }
 }
