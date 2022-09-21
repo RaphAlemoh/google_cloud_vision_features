@@ -444,4 +444,58 @@ class UploadController extends Controller
 
         $imageAnnotator->close();
     }
+
+
+    public function detectObject(Request $request)
+    {
+
+        $request->validate([
+            'avatar' => 'required|image|max:10240',
+        ]);
+
+        try {
+
+            $imageAnnotator = new ImageAnnotatorClient([
+                //we can also keep the details of the google cloud json file in an env and read it as an object here
+                'credentials' => config_path('laravel-cloud-features.json')
+            ]);
+
+            # annotate the image
+            $image = file_get_contents($request->file("avatar"));
+            $response = $imageAnnotator->objectLocalization($image);
+            $objects = $response->getLocalizedObjectAnnotations();
+
+            $object_content = '';
+
+            $count_obj = count($objects);
+
+            foreach ($objects as  $key => $object) {
+                $name = $object->getName();
+                $score = $object->getScore();
+                $vertices = $object->getBoundingPoly()->getNormalizedVertices();
+
+                $object_content .= "Object $key Confidence:- name: $name and score: $score \n";
+
+                // printf('%s (confidence %f)):' . PHP_EOL, $name, $score);
+
+                print('normalized bounding polygon vertices: ');
+
+                foreach ($vertices as $vertex) {
+                    // to access the vertices of the object
+                    printf(' (%f, %f)', $vertex->getX(), $vertex->getY());
+                }
+                // print(PHP_EOL);
+            }
+
+            $formatted_text = new HtmlString($object_content);
+
+            return redirect()->route('home')
+                ->with('success', "Object detection successful!!! Formatted objects found on image uploaded: $formatted_text. Number of objects detected: $count_obj");
+
+            //return home with a success message
+        } catch (Exception $e) {
+            return $e->getMessage();
+        }
+        $imageAnnotator->close();
+    }
 }

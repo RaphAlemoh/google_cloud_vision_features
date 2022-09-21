@@ -27,6 +27,8 @@ Route::middleware(['auth'])->group(function () {
     // Route::get('uploads/pdf', [UploadController::class, 'detectPDFinGCS'])->name('uploads.pdf');
 
     //detect faces on image upload
-    Route::post('uploads/store', [UploadController::class, 'detectFaces'])->name('uploads.store');
+    // Route::post('uploads/store', [UploadController::class, 'detectFaces'])->name('uploads.store');
 
+    //detect multiple objects on image upload
+    Route::post('uploads/store', [UploadController::class, 'detectObject'])->name('uploads.store');
 });
