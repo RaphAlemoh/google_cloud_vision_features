@@ -41,5 +41,9 @@ Route::middleware(['auth'])->group(function () {
 
 
     //detect image properties  on image upload
-    Route::post('uploads/store', [UploadController::class, 'detectImageProperties'])->name('uploads.store');
+    // Route::post('uploads/store', [UploadController::class, 'detectImageProperties'])->name('uploads.store');
+
+
+    //detect label definition of entities or objects on image upload
+    Route::post('uploads/store', [UploadController::class, 'detectLabels'])->name('uploads.store');
 });

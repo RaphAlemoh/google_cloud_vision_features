@@ -625,4 +625,51 @@ class UploadController extends Controller
         }
         $imageAnnotator->close();
     }
+
+
+
+
+    public function detectLabels(Request $request)
+    {
+
+        $request->validate([
+            'avatar' => 'required|image|max:10240',
+        ]);
+
+        try {
+
+            $imageAnnotator = new ImageAnnotatorClient([
+                //we can also keep the details of the google cloud json file in an env and read it as an object here
+                'credentials' => config_path('laravel-cloud-features.json')
+            ]);
+
+            # annotate the image
+            $image = file_get_contents($request->file("avatar"));
+            $response = $imageAnnotator->labelDetection($image);
+            $labels = $response->getLabelAnnotations();
+
+
+            $number_of_labels  = 0;
+
+            $img_label_content = '';
+            if ($labels) {
+                $number_of_labels = count($labels);
+                print('Labels:' . PHP_EOL);
+                foreach ($labels as $label) {
+                    $img_label_content .= "{$label->getDescription()} <br>";
+                }
+            } else {
+
+                $img_label_content .= 'No label found';
+            }
+
+            $formatted_label_details = new HtmlString("Image Properties detection successful!!! Number of Items with Labels:  $number_of_labels Formatted Details of Image Labels found on image uploaded: $img_label_content");
+
+            return redirect()->route('home')
+                ->with('success', $formatted_label_details);
+        } catch (Exception $e) {
+            return $e->getMessage();
+        }
+        $imageAnnotator->close();
+    }
 }
