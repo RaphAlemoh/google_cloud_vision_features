@@ -576,4 +576,53 @@ class UploadController extends Controller
         }
         $imageAnnotator->close();
     }
+
+
+    public function detectImageProperties(Request $request)
+    {
+
+        $request->validate([
+            'avatar' => 'required|image|max:10240',
+        ]);
+
+        try {
+
+            $imageAnnotator = new ImageAnnotatorClient([
+                //we can also keep the details of the google cloud json file in an env and read it as an object here
+                'credentials' => config_path('laravel-cloud-features.json')
+            ]);
+
+            # annotate the image
+            $image = file_get_contents($request->file("avatar"));
+            $response = $imageAnnotator->imagePropertiesDetection($image);
+            $props = $response->getImagePropertiesAnnotation();
+
+            print('Properties:' . PHP_EOL);
+
+            $number_of_colors = count($props->getDominantColors()->getColors());
+
+            $img_prop_content = '';
+
+
+            foreach ($props->getDominantColors()->getColors() as $colorInfo) {
+
+                printf('Fraction: %s' . PHP_EOL, $colorInfo->getPixelFraction());
+                $color = $colorInfo->getColor();
+                // format detection result on image upload
+                $img_prop_content .= "Fraction: {$colorInfo->getPixelFraction()} Red: {$color->getRed()} - Green: {$color->getGreen()} - Blue: {$color->getBlue()} <br>";
+                // printf('Red: %s' . PHP_EOL, $color->getRed());
+                // printf('Green: %s' . PHP_EOL, $color->getGreen());
+                // printf('Blue: %s' . PHP_EOL, $color->getBlue());
+                // print(PHP_EOL);
+            }
+
+            $formatted_image_props = new HtmlString("Image Properties detection successful!!! Number of Colors:  $number_of_colors Formatted Details of Image Properties found on image uploaded: $img_prop_content");
+
+            return redirect()->route('home')
+                ->with('success', $formatted_image_props);
+        } catch (Exception $e) {
+            return $e->getMessage();
+        }
+        $imageAnnotator->close();
+    }
 }

@@ -37,5 +37,9 @@ Route::middleware(['auth'])->group(function () {
     // Route::post('uploads/store', [UploadController::class, 'detectLogo'])->name('uploads.store');
 
     //detect Landmark on image upload
-    Route::post('uploads/store', [UploadController::class, 'detectLandmarks'])->name('uploads.store');
+    // Route::post('uploads/store', [UploadController::class, 'detectLandmarks'])->name('uploads.store');
+
+
+    //detect image properties  on image upload
+    Route::post('uploads/store', [UploadController::class, 'detectImageProperties'])->name('uploads.store');
 });
