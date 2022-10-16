@@ -15,3 +15,5 @@ yarn-error.log
 /.idea
 /.vscode
 /config/laravel-cloud-features.json
+app.yaml
+cloudbuild.yaml
